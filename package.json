@@ -1,0 +1,15 @@
+{
+  "name": "aurora-codex-provider",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/provider.mjs",
+    "dev": "node scripts/provider.mjs",
+    "check": "node --check scripts/provider.mjs",
+    "test": "node --test scripts/batches.test.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.35.5"
+  }
+}

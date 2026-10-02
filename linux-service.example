@@ -1,0 +1,19 @@
+# Plantilla para ~/.config/systemd/user/codex-image-provider.service
+# Sustituir todas las rutas y usar el usuario que ya inició sesión en Codex.
+[Unit]
+Description=Proveedor privado de imágenes con Codex CLI
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/RUTA/AL/PROVEEDOR
+ExecStart=/RUTA/ABSOLUTA/node /RUTA/AL/PROVEEDOR/scripts/provider.mjs 54799
+Environment=CODEX_BINARY=/RUTA/ABSOLUTA/codex
+Environment=LOCAL_IMAGE_DATA_DIR=/RUTA/PRIVADA/datos
+Environment=LOCAL_IMAGE_OUTPUT_DIR=/RUTA/PRIVADA/resultados
+Restart=on-failure
+RestartSec=10
+KillMode=control-group
+
+[Install]
+WantedBy=default.target

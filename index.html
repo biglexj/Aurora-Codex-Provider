@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aurora Codex Provider</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif;--surface:light-dark(#fff,#181920);--ink:light-dark(#242633,#eaeaf0);--line:light-dark(#dedfe8,#363741);--accent:light-dark(#5144be,#b6a5ff)}*{box-sizing:border-box}body{margin:0;color:var(--ink);background:light-dark(#f4f4fa,#101116)}main{max-width:680px;margin:64px auto;padding:0 24px 32px}h1{font-size:28px;margin-bottom:8px}p{line-height:1.55;color:light-dark(#626575,#a7a9bb)}article{margin:24px 0;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:16px}.status{font-weight:650;color:var(--accent)}code{overflow-wrap:anywhere}button{border:0;border-radius:10px;background:var(--accent);color:light-dark(#fff,#181920);padding:11px 15px;font:inherit;cursor:pointer}label{display:block;font-weight:650;margin:18px 0 8px}textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit;font:inherit;min-height:90px;margin-bottom:12px}a{color:var(--accent)}small{display:block;margin:12px 0;color:light-dark(#626575,#a7a9bb)}.row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}h2{font-size:17px;margin-top:0}ul{padding-left:20px;line-height:2}
+</style>
+<main>
+<h1>Aurora Codex Provider</h1>
+<p>Conecta tu aplicación a la generación de imágenes de Codex en este equipo.</p>
+<article><div class="row"><span class="status" id="status" role="status">Comprobando conexión…</span><button id="refresh">Actualizar</button></div><p>Dirección del proveedor</p><div class="row"><code id="endpoint"></code><button id="copy">Copiar</button></div><small>El servidor permanece activo aunque cierres esta página. En Windows, usa el lanzador del proyecto para iniciarlo o detenerlo.</small></article>
+<article><h2>Conexión de tu frontend</h2><label for="origins">Direcciones permitidas</label><textarea id="origins" aria-describedby="origin-help" placeholder="http://localhost:4322"></textarea><small id="origin-help">Una dirección por línea, con puerto si lo usa tu aplicación.</small><button id="save">Guardar conexión</button><p id="notice" role="status"></p></article>
+<article><h2>Endpoints</h2><ul><li><code>POST /v1/references</code> · Subir imágenes</li><li><code>POST /v1/images/edits</code> · Generar una variación</li><li><code>POST /v1/batches</code> · Generar expresiones en secuencia</li><li><code>GET /v1/jobs/{id}</code> · Consultar resultado</li></ul><a href="/api-docs" target="_blank">Ver contrato de API</a><p id="jobs">Consultando trabajos…</p></article>
+</main>
+<script>
+const endpoint=document.querySelector('#endpoint'),notice=document.querySelector('#notice');endpoint.textContent=location.origin;
+async function refresh(){try{const status=await fetch('/v1/status').then(r=>r.json());document.querySelector('#status').textContent=status.ready?'Conectado · cuenta de Codex lista':'Servidor activo · inicia sesión en Codex';const {jobs}=await fetch('/v1/jobs').then(r=>r.json());const running=jobs.find(j=>['queued','running','pausing','cancelling'].includes(j.status));document.querySelector('#jobs').textContent=running?`Generando: ${running.progress.completed} de ${running.progress.total} imágenes.`:`${jobs.filter(j=>j.status==='completed').length} trabajos completados. Sin generación en curso.`;}catch{document.querySelector('#status').textContent='No se pudo conectar con el servidor';}}
+async function load(){try{const config=await fetch('/api/config').then(r=>r.json());document.querySelector('#origins').value=config.allowedOrigins.join('\n');document.querySelector('#save').disabled=config.environmentOverride;if(config.environmentOverride)notice.textContent='La conexión está configurada desde el entorno del servidor.';}catch{notice.textContent='No se pudo leer la conexión.';}}
+document.querySelector('#refresh').onclick=refresh;
+document.querySelector('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(location.origin);notice.textContent='Dirección copiada.';}catch{notice.textContent='Selecciona y copia la dirección del proveedor.';}};
+document.querySelector('#save').onclick=async()=>{try{const allowedOrigins=document.querySelector('#origins').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);const response=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({allowedOrigins})});const data=await response.json();if(!response.ok)throw new Error(data.error);notice.textContent='Conexión guardada. Ya puedes enviar solicitudes desde tu frontend.';}catch(error){notice.textContent=error.message;}};
+refresh();load();setInterval(refresh,10000);
+</script>
+</html>
