@@ -4,7 +4,9 @@
 
 Las imágenes admiten roles explícitos para base, identidad, ropa, pose y estilo. Una nueva composición puede usar varias identidades sin tomar la primera imagen como una escena que deba conservarse. Los encargos sin roles y los lotes de expresiones mantienen su contrato anterior. Se amplía la exportación a 21:9/9:21 con proporción exacta y márgenes cuando hagan falta; no se promete resolución nativa. Diez pruebas y comprobación de scripts pasan. Activación en el proceso habitual de Windows pendiente de reinicio; una instancia aislada se usa para comprobar el editor de Aurora, sin cambios en Linux.
 
-## Versión publicada
+Comprobación desde Historias de Aurora: un trabajo con roles identity/pose completó PNG 576×1024 y se mostró en el editor. Se inspeccionó identidad, ropa deportiva y estadio; la pose se interpreta con la acción, sin verificar automáticamente semejanza ni geometría exacta.
+
+## Versión inicial
 
 Proyecto independiente y portable para proporcionar imágenes de Codex a Aurora. API asíncrona, hasta cinco referencias, expresiones secuenciales, pausa/continuación y ZIP. Lanzador Windows con inicio/parada del servidor y panel de conexión.
 
