@@ -2,6 +2,8 @@
 
 Proveedor personal de imágenes para Aurora. Usa Codex CLI con la cuenta de ChatGPT iniciada en este equipo. No necesita la interfaz de Codex abierta ni una clave de la API de OpenAI.
 
+El proyecto permanece privado. La integración como submódulo de Aurora y la preparación de una posible publicación open source están previstas en [ROADMAP.md](ROADMAP.md).
+
 ## Windows
 
 1. Instalar las dependencias una vez: `npm ci`.
