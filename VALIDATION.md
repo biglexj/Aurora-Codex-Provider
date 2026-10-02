@@ -19,3 +19,16 @@ La prueba del adaptador se ejecutó en Bun, no a través del selector de archivo
 - Servicio temporal de usuario `aurora-codex-provider-test.service`, iniciado con systemd-run. Endpoint exclusivamente en `127.0.0.1:54799`; GET /v1/status devuelve ready true y engine codex-native.
 - POST /v1/images/generations aceptado con HTTP 202. Trabajo `aef91f1d-43b5-4f5f-a693-1622dc06a842`: completed, progreso 1/1, sin error. Resultado `generated/aef91f1d-43b5-4f5f-a693-1622dc06a842/01_imagen.png`, 1024 × 1024, 2.731.983 bytes. La API devuelve HTTP 200, image/png y firma PNG válida. Copia de evidencia revisada visualmente en el chat: `outputs/aurora-codex-linux.png`; zorro astronauta, Luna, Tierra y estrellas, sin texto.
 - El servicio de prueba queda activo, sin arranque automático al reiniciar. No se abre el puerto público ni se modifica el backend de Aurora. Permanecen pendientes las ediciones con referencias en Linux, la integración autenticada de Aurora por HTTPS, el teléfono y el almacenamiento remoto.
+
+## Formatos horizontal y vertical en Linux · 2026-10-02
+
+Biglex solicita otra temática y acepta una imagen horizontal y otra vertical como prueba. Se generaron exactamente dos imágenes nuevas, consecutivamente y sin reintentos, mediante /v1/images/generations en el servicio Linux existente.
+
+| Formato | Tema | Trabajo | Salida PNG | Tamaño nativo |
+| --- | --- | --- | --- | --- |
+| 16:9 | Pueblo costero mediterráneo al amanecer, fotografía cinematográfica | dad61a7e-f470-45bf-b503-1c1fd8bed41a | 1024 × 576 | 1672 × 941 |
+| 9:16 | Torre de cristal con jardín botánico, ilustración de fantasía | bc7cc840-2b74-4435-a411-7677b4ad856b | 576 × 1024 | 941 × 1672 |
+
+Ambos trabajos completed, progreso 1/1 y error null. Ambas imágenes devueltas por la API con HTTP 200 y MIME image/png; dimensiones y firma PNG contrastadas con los bytes reales. La exportación normaliza el tamaño nativo con fit contain, sin recorte ni deformación. Revisión visual de los PNG exportados: paisaje horizontal y torre completa en vertical, sin texto ni marcos visibles. No se generaron imágenes de 3:4 o 4:3 en esta prueba.
+
+Imágenes conservadas en generated/{id}/01_imagen.png del servidor. Copias de evidencia en el chat: outputs/aurora-linux-horizontal-16x9.png y outputs/aurora-linux-vertical-9x16.png. Manifest de verificación con HTTP, tamaños y SHA-256: data/ratio-test-dad61a7e-f470-45bf-b503-1c1fd8bed41a.json (fuera de Git), copiado a outputs/aurora-linux-format-test.json del chat.
