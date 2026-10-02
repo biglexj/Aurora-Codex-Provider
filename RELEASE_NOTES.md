@@ -5,3 +5,5 @@ Proyecto independiente y portable para proporcionar imágenes de Codex a Aurora.
 La generación integrada usa la sesión de Codex del usuario; no pide API key. Datos y resultados permanecen en `data/` y `generated/`, fuera de Git. Validación y límites en [VALIDATION.md](VALIDATION.md).
 
 El inicio desde Windows encuentra el ejecutable de Codex instalado aunque su carpeta no figure en PATH. Aurora muestra Aurora Codex Provider y sitúa Generar imagen encima de los proveedores.
+
+Prueba en Linux del 2026-10-02: repositorio privado en GitHub, instalación bajo el usuario autenticado y servicio de prueba en loopback. La CLI produjo un PNG real de 1024 × 1024 sin interfaz gráfica ni API key. Se documenta la ruta explícita de Codex para servicios y sesiones SSH; el acceso HTTPS desde Aurora y el arranque permanente siguen pendientes.

@@ -1,6 +1,6 @@
 # Proveedor de imágenes con Codex CLI
 
-Aurora Codex Provider inicia Codex CLI sin interfaz gráfica y usa su generación integrada con la cuenta de ChatGPT ya iniciada. No solicita ni usa claves de la API de OpenAI. La conexión está probada en Windows; Linux requiere su propia validación.
+Aurora Codex Provider inicia Codex CLI sin interfaz gráfica y usa su generación integrada con la cuenta de ChatGPT ya iniciada. No solicita ni usa claves de la API de OpenAI. La conexión está probada en Windows y una generación desde texto está validada en Linux; el recorrido HTTPS desde Aurora todavía está pendiente.
 
 ## Inicio
 
@@ -105,6 +105,6 @@ Inspección del código actual: Outfit Changer envía a `/api/creador/outfit-cha
 
 Diseño para Linux: teléfono → frontend de Aurora → API de Aurora por HTTPS y con sesión de usuario → proveedor por `127.0.0.1` → Codex CLI del usuario ya autenticado → imagen → storage e historial existentes. Mantener `api.biglexj.com/api/v1/` como API pública. El servicio de Codex y su sesión permanecen privados. El backend Rust deberá admitir trabajos largos y progreso; su cliente actual de proveedores tiene un timeout de 60 segundos, que no cubre todas las generaciones.
 
-Aurora tiene un adaptador local disponible únicamente en desarrollo: Outfit Changer ofrece el proveedor incluso si el servicio está apagado y muestra «Aurora Codex Provider». Envía referencias, crea la edición y espera su resultado. El catálogo remoto y el almacenamiento no se modificaron; las imágenes locales aún no se sincronizan con el historial de Aurora. La subida desde el navegador requiere validación manual porque la prueba automatizada del selector de archivo se bloqueó. La sesión en Linux la debe usar el mismo usuario que ya ejecuta Codex; no hace falta interfaz gráfica. Falta probar una generación real allí y luego el recorrido desde el teléfono a Aurora.
+Aurora tiene un adaptador local disponible únicamente en desarrollo: Outfit Changer y B-roll comparten el catálogo de imágenes y muestran «Aurora Codex Provider». El registro de Supabase identifica el proveedor local sin publicar credenciales o direcciones privadas. Las imágenes locales aún no se sincronizan con el historial remoto de Aurora. La sesión en Linux la usa el mismo usuario que ya ejecuta Codex; no hace falta interfaz gráfica. Una generación real desde texto completó correctamente allí el 2026-10-02. Las ediciones con referencias en Linux y el recorrido desde el teléfono a Aurora siguen pendientes.
 
 Documentación oficial: [generación integrada](https://learn.chatgpt.com/docs/image-generation), [CLI en Linux](https://learn.chatgpt.com/docs/cli), [autenticación](https://learn.chatgpt.com/docs/auth).

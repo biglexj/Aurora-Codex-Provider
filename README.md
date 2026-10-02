@@ -26,4 +26,28 @@ Ver [API.md](API.md) y el adaptador [client.mjs](client.mjs). Admite hasta cinco
 
 ## Linux
 
-`npm ci` y `npm start` bajo el mismo usuario que tiene la sesión de Codex. La plantilla `linux-service.example` permite ejecutar un servicio sin interfaz; aún requiere validación en tu servidor. Para el teléfono, el backend autenticado de Aurora recibe HTTPS y llama a este proveedor por loopback. No se ha publicado ni desplegado el servicio.
+Usar Node.js 20.9 o posterior y el mismo usuario que tiene la sesión de Codex. El repositorio es privado: Git debe tener acceso a GitHub en ese servidor.
+
+```bash
+git clone https://github.com/biglexj/Aurora-Codex-Provider.git
+cd Aurora-Codex-Provider
+npm ci
+CODEX_BINARY="$HOME/.local/bin/codex" npm start
+```
+
+La ruta de `CODEX_BINARY` debe coincidir con `command -v codex` en la terminal donde funciona Codex. Una sesión SSH o un servicio pueden tener un PATH distinto al de la terminal interactiva.
+
+La plantilla `linux-service.example` permite ejecutar un servicio sin interfaz. Para comprobar el endpoint desde el propio servidor: `curl http://127.0.0.1:54799/v1/status`. `ready: true` confirma la sesión; la prueba funcional exige que un trabajo termine con una imagen real.
+
+Para el teléfono, el backend autenticado de Aurora recibe HTTPS y llama al proveedor por loopback. Esa conexión pública y el arranque permanente se configuran por separado; la prueba local no los habilita.
+
+### Instalación de prueba en el servidor de Biglex
+
+Proyecto: `/home/biglexj/Proyectos/Aurora-Codex-Provider`. Servicio de usuario temporal: `aurora-codex-provider-test.service`, con Node `/usr/bin/node` y Codex `/home/biglexj/.local/bin/codex`. La generación real de una imagen completó correctamente; ver [VALIDATION.md](VALIDATION.md).
+
+```bash
+systemctl --user status aurora-codex-provider-test.service
+curl http://127.0.0.1:54799/v1/status
+```
+
+El servicio de prueba permanece activo y no tiene arranque automático al reiniciar. Para detenerlo cuando no haya trabajos en curso: `systemctl --user stop aurora-codex-provider-test.service`.
