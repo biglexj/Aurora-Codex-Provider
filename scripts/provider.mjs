@@ -42,7 +42,7 @@ const server=createServer(async(req,res)=>{
       res.end(await readFile(new URL('../index.html',import.meta.url),'utf8'));return;
     }
     if(route==='/client.mjs' && req.method==='GET') {res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store'});res.end(await readFile(new URL('../client.mjs',import.meta.url)));return;}
-    if(['/api/status','/v1/status'].includes(route) && req.method==='GET') return send({...generatorStatus(),name:'Aurora Codex Provider',api_version:'1',capabilities:{generation:true,edits:true,max_references:5,max_batch:30,serial:true,aspect_ratios:RATIOS,output_long_edges:RESOLUTIONS}});
+    if(['/api/status','/v1/status'].includes(route) && req.method==='GET') return send({...generatorStatus(),name:'Aurora Codex Provider',api_version:'1',capabilities:{generation:true,edits:true,max_references:5,reference_roles:true,max_batch:30,serial:true,aspect_ratios:RATIOS,output_long_edges:RESOLUTIONS}});
     if(route==='/api/presets' && req.method==='GET') return send({expressions:EXPRESSIONS,ratios:RATIOS,resolutions:RESOLUTIONS});
     if(route==='/v1/jobs' && req.method==='GET') return send({jobs:queue.list().map(publicJob)});
     if(route.startsWith('/api/jobs/') && req.method==='GET') {const batch=queue.get(route.slice(10));if(batch) {const item=batch.items[0];return send({job:{id:batch.id,state:batch.state,image:item.image,prompt:batch.prompt,error:batch.error}});}const job=await findJob(route.slice(10));return job?send({job}):send({error:'Solicitud no encontrada.'},404);}

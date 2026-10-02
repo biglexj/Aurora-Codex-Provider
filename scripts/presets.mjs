@@ -12,7 +12,7 @@ export const EXPRESSIONS = [
   {id:'esceptica',label:'Escéptica',icon:'↗',prompt:'Escepticismo; una ceja alzada, mirada evaluadora y una comisura de la boca ligeramente tensa.'},
   {id:'confundida',label:'Confundida',icon:'¿',prompt:'Confusión suave; cejas asimétricas, mirada dubitativa y boca ligeramente entreabierta.'}
 ];
-export const RATIOS=['1:1','16:9','9:16','3:4','4:3'];
+export const RATIOS=['1:1','16:9','9:16','3:4','4:3','21:9','9:21'];
 export const RESOLUTIONS=['1024','2048'];
 export function outputSize(ratio,resolution) {
   const [w,h]=ratio.split(':').map(Number), edge=Number(resolution);

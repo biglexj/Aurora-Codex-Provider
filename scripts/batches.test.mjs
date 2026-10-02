@@ -6,6 +6,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {BatchQueue} from './batches.mjs';
 import {outputSize,EXPRESSIONS} from './presets.mjs';
+import {referenceGuide} from './reference-roles.mjs';
 const ref=randomUUID();
 const input=()=>({requestId:randomUUID(),references:[ref],expressions:EXPRESSIONS.slice(0,10).map(e=>e.id),count:10,ratio:'3:4',resolution:'1024',background:'original',prompt:''});
 async function fixture(generate) {const directory=await mkdtemp(path.join(os.tmpdir(),'aurora-provider-queue-'));const queue=new BatchQueue({directory,generate,referenceLoader:async id=>({id,hasAlpha:false}),exporter:async(job,batch,item,index)=>({image:'/test/'+index,filename:String(index)+'.png',width:768,height:1024})});await queue.initialize();return queue;}
@@ -33,3 +34,25 @@ test('invalid reference count and presets are rejected before any generation',as
   let calls=0;const queue=await fixture(async()=>calls++);await assert.rejects(queue.create({...input(),references:Array.from({length:6},()=>randomUUID())}));await assert.rejects(queue.create({...input(),expressions:['unknown']}));assert.equal(calls,0);
 });
 test('all five export ratios are exact',()=>{for(const ratio of ['1:1','16:9','9:16','3:4','4:3']) {const [w,h]=ratio.split(':').map(Number),size=outputSize(ratio,'2048');assert.equal(size.width*h,size.height*w);}});
+test('image references keep their roles through queue and native generation',async()=>{
+  let generated;const queue=await fixture(async job=>{generated=job;job.state='completed';});
+  const request={...input(),kind:'image',references:[randomUUID(),randomUUID(),randomUUID()],reference_roles:['base','pose','style'],count:1,prompt:'Cambiar ropa y seguir la pose del boceto.'};
+  const batch=await queue.create(request);await settled(queue,batch.id);
+  assert.deepEqual(generated.referenceRoles,['base','pose','style']);
+  assert.match(generated.prompt,/Imagen 2: solo postura/);assert.match(generated.prompt,/no rostro, ropa ni aspecto del maniquí/);
+  assert.doesNotMatch(referenceGuide(generated.referenceRoles),/las demás aclaran su identidad/);
+});
+test('no-base references are guides and invalid roles never start generation',async()=>{
+  let calls=0;const queue=await fixture(async job=>{calls++;job.state='completed';});
+  const request={...input(),kind:'image',count:1,prompt:'Una ilustración',reference_roles:['pose']};
+  assert.match(referenceGuide(['pose']),/Ninguna imagen es base/);
+  for(const reference_roles of [['unknown'],[],['pose','base']]) await assert.rejects(queue.create({...request,requestId:randomUUID(),reference_roles}));
+  assert.equal(calls,0);
+  const batch=await queue.create(request);assert.equal((await settled(queue,batch.id)).completed,1);
+});
+test('cinema ratios are exported exactly in both orientations',()=>{
+  for(const ratio of ['21:9','9:21']) for(const resolution of ['1024','2048']) {
+    const [w,h]=ratio.split(':').map(Number),size=outputSize(ratio,resolution);
+    assert.equal(size.width*h,size.height*w);assert.ok(size.width>0 && size.height>0);assert.ok(Math.max(size.width,size.height)<=Number(resolution));
+  }
+});

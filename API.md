@@ -34,13 +34,13 @@ La API es asíncrona: crear un trabajo devuelve HTTP 202 y un identificador. Con
 | Descargar imágenes terminadas y manifest | `GET /v1/jobs/{id}/download` |
 | Expresiones disponibles | `GET /api/presets` |
 
-Subir la referencia con el archivo como cuerpo binario, `Content-Type: image/png`, `image/jpeg` o `image/webp`, y opcionalmente `X-File-Name` con el nombre codificado mediante `encodeURIComponent`. Límite: 12 MB por imagen estática, 32 megapíxeles. El servidor valida y guarda una copia PNG; devuelve `{reference:{id,name,width,height,url,hasAlpha}}`. La primera referencia es la base; las demás aclaran la identidad del mismo personaje. No recibe rutas arbitrarias ni descarga URLs externas.
+Subir la referencia con el archivo como cuerpo binario, `Content-Type: image/png`, `image/jpeg` o `image/webp`, y opcionalmente `X-File-Name` con el nombre codificado mediante `encodeURIComponent`. Límite: 12 MB por imagen estática, 32 megapíxeles. El servidor valida y guarda una copia PNG; devuelve `{reference:{id,name,width,height,url,hasAlpha}}`. Sin `reference_roles`, la primera referencia es la base y las demás aclaran la identidad del mismo personaje. Los roles explícitos permiten referencias de distintos personajes, ropa, pose o estilo para una nueva composición. No recibe rutas arbitrarias ni descarga URLs externas.
 
 Cada creación necesita un UUID en `Idempotency-Key` o en el campo `request_id`. Reutilizarlo para consultar/repetir una misma solicitud de transporte, sin generar de nuevo. Usar otro UUID para una nueva generación. Los identificadores se conservan tras reiniciar el servicio. No hay reintentos automáticos. Un trabajo activo impide empezar otro; pausarlo permite crear otro lote.
 
 ### Imagen o edición
 
-Enviar JSON con `prompt` (obligatorio, máximo 2000 caracteres), `references` (solo en edición, IDs en orden), `aspect_ratio`, `resolution` y `background`. El proveedor devuelve una sola imagen; las ediciones obedecen el prompt libre y conservan lo que este no pida cambiar.
+Enviar JSON con `prompt` (obligatorio, máximo 2000 caracteres), `references` (solo en edición, IDs en orden), `aspect_ratio`, `resolution` y `background`. `reference_roles` es opcional para imágenes: un rol por referencia (`base`, `identity`, `outfit`, `pose`, `style`); como máximo una base, en primer lugar. Sin base, las imágenes guían una nueva composición. Sin este campo se conserva el comportamiento anterior. Los lotes de expresiones mantienen sus referencias de identidad originales. El proveedor devuelve una sola imagen; las ediciones obedecen el prompt libre y conservan lo que este no pida cambiar.
 
 ### Lote de expresiones
 
@@ -59,7 +59,7 @@ Enviar JSON con `prompt` (obligatorio, máximo 2000 caracteres), `references` (s
 
 `count`: 1–30. Las expresiones se recorren en el orden indicado y se repiten si se piden más imágenes que expresiones. Cada llamada incluye las referencias originales, no la imagen recién generada. También están disponibles `esceptica` y `confundida`. Los presets están en este proveedor de prueba; al integrarlo en Aurora, sus presets existentes deben seguir siendo la fuente de instrucciones.
 
-Proporciones: `1:1`, `16:9`, `9:16`, `3:4`, `4:3`. Resolución de **exportación**: lado mayor `1024` o `2048`. Se pide esa composición al generador y después se ajusta a las dimensiones de salida exactas, sin recortar ni estirar: se añade margen transparente cuando hace falta. No se promete generación nativa de 2K; el manifest informa las dimensiones nativas y si se normalizó el archivo.
+Proporciones: `1:1`, `16:9`, `9:16`, `3:4`, `4:3`, `21:9`, `9:21`. Resolución de **exportación**: lado mayor `1024` o `2048`. Se pide esa composición al generador y después se ajusta a las dimensiones de salida exactas, sin recortar ni estirar: se añade margen transparente cuando hace falta. No se promete generación nativa de 2K; el manifest informa las dimensiones nativas y si se normalizó el archivo.
 
 Fondo: `original` conserva el de la base; `transparent` solicita alfa real. Si se solicitó transparencia y el generador devolvió un fondo opaco, el lote se detiene para revisión. Una referencia con alfa también pide conservarlo. La fidelidad de identidad y outfit necesita revisión visual: las restricciones del prompt no constituyen una verificación automática de semejanza.
 

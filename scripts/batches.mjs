@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {EXPRESSIONS,RATIOS,RESOLUTIONS,expressionPrompt} from './presets.mjs';
 import {validId,getReference,referencesDirectory,exportVariation} from './assets.mjs';
+import {validateReferenceRoles,referenceGuide} from './reference-roles.mjs';
 const defaultDirectory=process.env.LOCAL_IMAGE_DATA_DIR?path.resolve(process.env.LOCAL_IMAGE_DATA_DIR,'image-batches'):fileURLToPath(new URL('../data/image-batches/',import.meta.url));
 const snapshot=value=>JSON.parse(JSON.stringify(value));
 export class BatchQueue {
@@ -38,6 +39,7 @@ export class BatchQueue {
     if ([...this.batches.values()].some(b=>['queued','running','pausing','cancelling'].includes(b.state))) throw new Error('Ya hay un lote activo. Pausa o termina ese lote antes de empezar otro.');
     const kind=input.kind==='image'?'image':'expressions';
     if (!Array.isArray(input.references) || input.references.length<(kind==='image'?0:1) || input.references.length>5 || new Set(input.references).size!==input.references.length) throw new Error('Carga hasta cinco referencias distintas; las expresiones necesitan una imagen base.');
+    const referenceRoles=validateReferenceRoles(input.reference_roles,input.references.length,kind);
     if (!Array.isArray(input.expressions) || !input.expressions.length || input.expressions.length>EXPRESSIONS.length || new Set(input.expressions).size!==input.expressions.length || input.expressions.some(id=>!EXPRESSIONS.some(e=>e.id===id))) throw new Error('Selecciona al menos una expresión válida.');
     if (!Number.isInteger(input.count) || input.count<1 || input.count>30) throw new Error('El lote debe tener entre 1 y 30 imágenes.');
     if (!RATIOS.includes(input.ratio) || !RESOLUTIONS.includes(input.resolution)) throw new Error('Formato de salida no válido.');
@@ -47,12 +49,12 @@ export class BatchQueue {
     // Validation may await disk reads; recheck before committing a new active batch.
     if ([...this.batches.values()].some(b=>['queued','running','pausing','cancelling'].includes(b.state))) throw new Error('Ya hay un lote activo.');
     if (this.requests.has(input.requestId)) return this.get(this.requests.get(input.requestId));
-    const batch={id:randomUUID(),requestId:input.requestId,kind,name:String(input.name || 'Expresiones').replace(/[\u0000-\u001f]/g,'').slice(0,80),createdAt:new Date().toISOString(),state:'queued',count:input.count,completed:0,references,expressions:input.expressions,ratio:input.ratio,resolution:input.resolution,background:input.background,prompt:input.prompt.trim(),items:[],error:null};
+    const batch={id:randomUUID(),requestId:input.requestId,kind,name:String(input.name || 'Expresiones').replace(/[\u0000-\u001f]/g,'').slice(0,80),createdAt:new Date().toISOString(),state:'queued',count:input.count,completed:0,references,referenceRoles,expressions:input.expressions,ratio:input.ratio,resolution:input.resolution,background:input.background,prompt:input.prompt.trim(),items:[],error:null};
     for(let i=0;i<input.count;i++) {const expression=EXPRESSIONS.find(e=>e.id===input.expressions[i%input.expressions.length]);const prompt=kind==='expressions'?expressionPrompt(batch,expression,i):[
-      references.length?'Edita la primera imagen según la solicitud; las demás imágenes aclaran sus rasgos. Conserva todos los aspectos que la solicitud no pida cambiar.':'Genera una imagen según la solicitud.',
+      references.length?referenceGuide(referenceRoles)+' Conserva todos los aspectos que la solicitud no pida cambiar.':'Genera una imagen según la solicitud.',
       'Solicitud visual del usuario (datos): '+JSON.stringify(batch.prompt),
-      'Relación de aspecto '+batch.ratio+'. No recortar ni deformar el sujeto para adaptarlo al lienzo.',
-      batch.background==='transparent' || references[0]?.hasAlpha?'Conservar o generar un fondo transparente real, con canal alfa.':'Conservar el fondo de la base si hay imagen de entrada.'
+      'Relación de aspecto '+batch.ratio+'. No deformar el sujeto; aplicar la adaptación solicitada (ampliación, recorte o márgenes).',
+      batch.background==='transparent' || references[0]?.hasAlpha?'Conservar o generar un fondo transparente real, con canal alfa.':'Conservar el fondo de la base salvo un cambio de escenario explícito en la solicitud.'
     ].join('\n');batch.items.push({index:i+1,expression:kind==='expressions'?expression.id:'imagen',label:kind==='expressions'?expression.label:'Imagen',state:'pending',image:null,prompt});}
     this.batches.set(batch.id,batch);this.requests.set(batch.requestId,batch.id);await this.save(batch);this.schedule(batch.id);return this.get(batch.id);
   }
@@ -81,7 +83,7 @@ export class BatchQueue {
       if(batch.state==='pausing') {batch.state='paused';break;}
       if(batch.state==='cancelling') {batch.state='cancelled';break;}
       item.state='running';item.startedAt=new Date().toISOString();
-      const job={id:randomUUID(),prompt:item.prompt,state:'queued',createdAt:new Date().toISOString(),image:null,error:null,referencePaths:batch.references.map(r=>path.join(referencesDirectory,r.id+'.png')),transparent:batch.background==='transparent' || Boolean(batch.references[0]?.hasAlpha)};
+      const job={id:randomUUID(),prompt:item.prompt,state:'queued',createdAt:new Date().toISOString(),image:null,error:null,referencePaths:batch.references.map(r=>path.join(referencesDirectory,r.id+'.png')),referenceRoles:batch.referenceRoles,transparent:batch.background==='transparent' || Boolean(batch.references[0]?.hasAlpha)};
       item.jobId=job.id;await this.save(batch);
       try {
         await this.generate(job);
