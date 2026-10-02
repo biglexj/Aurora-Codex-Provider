@@ -4,12 +4,13 @@ import {mkdir,readFile,writeFile,rename,copyFile,realpath,stat} from 'node:fs/pr
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import os from 'node:os';
+import {resolveCodexBinary} from './codex-binary.mjs';
 
 const jobsDirectory=process.env.LOCAL_IMAGE_DATA_DIR?path.resolve(process.env.LOCAL_IMAGE_DATA_DIR,'image-jobs'):fileURLToPath(new URL('../data/image-jobs/',import.meta.url));
 const imagesDirectory=process.env.LOCAL_IMAGE_OUTPUT_DIR?path.resolve(process.env.LOCAL_IMAGE_OUTPUT_DIR):fileURLToPath(new URL('../generated/',import.meta.url));
 const jobs=new Map(),requests=new Map(),pending=[];
 let processing=false;
-const executable=process.env.CODEX_BINARY || 'codex';
+const executable=resolveCodexBinary();
 const check=spawnSync(executable,['login','status'],{encoding:'utf8',shell:false,windowsHide:true,timeout:15000});
 const connected=check.status===0 && /logged in using chatgpt/i.test(check.stdout+' '+check.stderr);
 export const generatorStatus=()=>({ready:connected,engine:'codex-native',local:true});

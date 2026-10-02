@@ -8,3 +8,5 @@
 - Los intentos recientes rechazados por filtros de seguridad se conservaron como fallidos. El servicio informa ese motivo y no reintenta automáticamente.
 
 La prueba del adaptador se ejecutó en Bun, no a través del selector de archivos del navegador. La interfaz de Outfit Changer detectó el proveedor; su subida manual y visualización final siguen pendientes. Linux, HTTPS desde el teléfono e historial remoto también están pendientes. Ningún despliegue ni publicación realizados.
+
+- Inicio desde el lanzador de Windows: se corrigió la búsqueda del ejecutable instalado por Codex cuando Explorer no aporta su carpeta al PATH. Con PATH vacío, el resolver encontró codex.exe y login status confirmó la cuenta. Detener e Iniciar desde la ventana devolvió ready true.
