@@ -53,3 +53,19 @@ curl http://127.0.0.1:54799/v1/status
 ```
 
 El servicio de prueba permanece activo y no tiene arranque automático al reiniciar. Para detenerlo cuando no haya trabajos en curso: `systemctl --user stop aurora-codex-provider-test.service`.
+
+### Servicio permanente en Linux · 04/10/2026
+
+La prueba temporal anterior se sustituyó por `codex-image-provider.service`, habilitado como servicio de usuario con `Restart=on-failure` y `loginctl enable-linger biglexj`. Usa las rutas absolutas de Node y Codex, conserva `data/` y `generated/` y escucha únicamente en `127.0.0.1:54799`. No depende de mantener SSH o una terminal abiertos.
+
+Para otro servidor, adaptar `linux-service.example`, guardarlo en `~/.config/systemd/user/codex-image-provider.service` y ejecutar:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now codex-image-provider.service
+loginctl enable-linger "$USER"
+systemctl --user status codex-image-provider.service
+curl http://127.0.0.1:54799/v1/status
+```
+
+La activación de linger puede requerir permisos de administrador según el servidor. En el entorno de Biglex quedó `Linger=yes` y el proveedor respondió `ready=true`; una nueva solicitud del usuario completó y se entregó por el puente HTTPS de Aurora. No se reinició la máquina para probar este cambio.
