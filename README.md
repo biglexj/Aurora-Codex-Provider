@@ -2,6 +2,8 @@
 
 Proveedor personal de imágenes para Aurora. Usa Codex CLI con la cuenta de ChatGPT iniciada en este equipo. No necesita la interfaz de Codex abierta ni una clave de la API de OpenAI.
 
+La solicitud admite hasta 20 000 caracteres Unicode sin recortar el prompt; el cuerpo JSON está acotado a 128 KiB. Es un límite de la integración de Aurora, independiente del contexto y las cuotas del generador. Véase [el contrato HTTP](API.md).
+
 El proyecto permanece privado. La integración como submódulo de Aurora y la preparación de una posible publicación open source están previstas en [ROADMAP.md](ROADMAP.md).
 
 ## Windows

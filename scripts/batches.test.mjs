@@ -7,10 +7,40 @@ import os from 'node:os';
 import {BatchQueue} from './batches.mjs';
 import {outputSize,EXPRESSIONS} from './presets.mjs';
 import {referenceGuide} from './reference-roles.mjs';
+import {Readable} from 'node:stream';
+import {IMAGE_PROMPT_MAX_CHARS,IMAGE_JOB_JSON_MAX_BYTES,validatePrompt} from './prompt-limits.mjs';
+import {requestBody} from './request-body.mjs';
 const ref=randomUUID();
 const input=()=>({requestId:randomUUID(),references:[ref],expressions:EXPRESSIONS.slice(0,10).map(e=>e.id),count:10,ratio:'3:4',resolution:'1024',background:'original',prompt:''});
 async function fixture(generate) {const directory=await mkdtemp(path.join(os.tmpdir(),'aurora-provider-queue-'));const queue=new BatchQueue({directory,generate,referenceLoader:async id=>({id,hasAlpha:false}),exporter:async(job,batch,item,index)=>({image:'/test/'+index,filename:String(index)+'.png',width:768,height:1024})});await queue.initialize();return queue;}
 async function settled(queue,id) {for(let i=0;i<500;i++) {const state=queue.get(id)?.state;if(['completed','paused','failed','cancelled'].includes(state)) return queue.get(id);await new Promise(r=>setTimeout(r,5));}throw new Error('La prueba no terminó.');}
+
+test('20 000 Unicode characters survive request parsing, queue persistence and native instructions',async()=>{
+  for(const character of ['a','🎨','\u0000']) {
+    const prompt='a'+character.repeat(IMAGE_PROMPT_MAX_CHARS-1);
+    const encoded=Buffer.from(JSON.stringify({prompt}));
+    const parsed=JSON.parse((await requestBody(Readable.from([encoded.subarray(0,13),encoded.subarray(13)]),IMAGE_JOB_JSON_MAX_BYTES)).toString('utf8'));
+    let generated;
+    const queue=await fixture(async job=>{generated=job;job.state='completed';});
+    const batch=await queue.create({...input(),kind:'image',count:1,prompt:parsed.prompt});
+    const done=await settled(queue,batch.id);
+    assert.equal(done.prompt,prompt);
+    assert.ok(generated.prompt.includes(JSON.stringify(prompt)));
+    validatePrompt(prompt); // Legacy enqueue uses this same validation.
+  }
+});
+
+test('20 001 characters and oversized JSON fail before generation',async()=>{
+  let calls=0;const queue=await fixture(async()=>calls++);
+  for(const character of ['a','🎨']) {
+    const prompt=character.repeat(IMAGE_PROMPT_MAX_CHARS+1);
+    assert.throws(()=>validatePrompt(prompt),/20 000/);
+    await assert.rejects(queue.create({...input(),kind:'image',count:1,prompt}),/20 000/);
+  }
+  await assert.rejects(queue.create({...input(),kind:'image',count:1,prompt:'  '}),/Escribe una idea/);
+  await assert.rejects(requestBody(Readable.from([Buffer.alloc(IMAGE_JOB_JSON_MAX_BYTES+1)]),IMAGE_JOB_JSON_MAX_BYTES),error=>error.status===413);
+  assert.equal(calls,0);
+});
 test('ten variations run serially and keep original references; duplicate key does not resubmit',async()=>{
   let active=0,max=0,count=0;const paths=[];
   const queue=await fixture(async job=>{active++;max=Math.max(max,active);count++;paths.push(job.referencePaths);await new Promise(r=>setTimeout(r,2));job.state='completed';active--;});

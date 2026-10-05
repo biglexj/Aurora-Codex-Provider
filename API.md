@@ -40,7 +40,7 @@ Cada creación necesita un UUID en `Idempotency-Key` o en el campo `request_id`.
 
 ### Imagen o edición
 
-Enviar JSON con `prompt` (obligatorio, máximo 2000 caracteres), `references` (solo en edición, IDs en orden), `aspect_ratio`, `resolution` y `background`. `reference_roles` es opcional para imágenes: un rol por referencia (`base`, `identity`, `outfit`, `pose`, `style`); como máximo una base, en primer lugar. Sin base, las imágenes guían una nueva composición. Sin este campo se conserva el comportamiento anterior. Los lotes de expresiones mantienen sus referencias de identidad originales. El proveedor devuelve una sola imagen; las ediciones obedecen el prompt libre y conservan lo que este no pida cambiar.
+Enviar JSON con `prompt` (obligatorio, máximo 20 000 caracteres Unicode), `references` (solo en edición, IDs en orden), `aspect_ratio`, `resolution` y `background`. El cuerpo JSON admite hasta 128 KiB para cubrir texto multibyte, escapes y metadatos. Es un límite de Aurora, independiente del contexto del modelo o de las cuotas de Codex; no se recorta ni resume el prompt automáticamente. `GET /v1/status` lo publica como `capabilities.max_prompt_chars`. `reference_roles` es opcional para imágenes: un rol por referencia (`base`, `identity`, `outfit`, `pose`, `style`); como máximo una base, en primer lugar. Sin base, las imágenes guían una nueva composición. Sin este campo se conserva el comportamiento anterior. Los lotes de expresiones mantienen sus referencias de identidad originales. El proveedor devuelve una sola imagen; las ediciones obedecen el prompt libre y conservan lo que este no pida cambiar.
 
 ### Lote de expresiones
 

@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {EXPRESSIONS,RATIOS,RESOLUTIONS,expressionPrompt} from './presets.mjs';
 import {validId,getReference,referencesDirectory,exportVariation} from './assets.mjs';
 import {validateReferenceRoles,referenceGuide} from './reference-roles.mjs';
+import {validatePrompt} from './prompt-limits.mjs';
 const defaultDirectory=process.env.LOCAL_IMAGE_DATA_DIR?path.resolve(process.env.LOCAL_IMAGE_DATA_DIR,'image-batches'):fileURLToPath(new URL('../data/image-batches/',import.meta.url));
 const snapshot=value=>JSON.parse(JSON.stringify(value));
 export class BatchQueue {
@@ -44,7 +45,7 @@ export class BatchQueue {
     if (!Number.isInteger(input.count) || input.count<1 || input.count>30) throw new Error('El lote debe tener entre 1 y 30 imágenes.');
     if (!RATIOS.includes(input.ratio) || !RESOLUTIONS.includes(input.resolution)) throw new Error('Formato de salida no válido.');
     if (!['original','transparent'].includes(input.background)) throw new Error('Fondo no válido.');
-    if (typeof input.prompt!=='string' || input.prompt.length>2000 || (kind==='image' && !input.prompt.trim())) throw new Error('El prompt admite hasta 2000 caracteres y es obligatorio para una imagen libre.');
+    validatePrompt(input.prompt,{required:kind==='image'});
     const references=await Promise.all(input.references.map(id=>this.referenceLoader(id)));
     // Validation may await disk reads; recheck before committing a new active batch.
     if ([...this.batches.values()].some(b=>['queued','running','pausing','cancelling'].includes(b.state))) throw new Error('Ya hay un lote activo.');

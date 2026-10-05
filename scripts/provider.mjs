@@ -6,16 +6,13 @@ import {EXPRESSIONS,RATIOS,RESOLUTIONS} from './presets.mjs';
 import {storeReference,storedImage} from './assets.mjs';
 import {batchZip} from './zip.mjs';
 import {loadConfig,saveOrigins} from './config.mjs';
+import {IMAGE_JOB_JSON_MAX_BYTES,IMAGE_PROMPT_MAX_CHARS} from './prompt-limits.mjs';
+import {requestBody as body} from './request-body.mjs';
 const config=await loadConfig();
 const port=Number(process.argv[2] || 54799);
 const allowedOrigins=new Set(process.env.LOCAL_IMAGE_ALLOWED_ORIGINS!==undefined?process.env.LOCAL_IMAGE_ALLOWED_ORIGINS.split(',').map(s=>s.trim()).filter(Boolean):config.allowedOrigins);
 const queue=new BatchQueue({generate:generateNative,ready:()=>generatorStatus().ready});
 await queue.initialize();
-async function body(req,max) {
-  const chunks=[];let size=0;
-  for await(const chunk of req) {size+=chunk.length;if(size>max) {const error=new Error('La solicitud es demasiado grande.');error.status=413;throw error;}chunks.push(chunk);}
-  return Buffer.concat(chunks);
-}
 const publicJob=batch=>({id:batch.id,status:batch.state,created_at:batch.createdAt,progress:{completed:batch.completed,total:batch.count},outputs:batch.items.filter(i=>i.state==='completed').map(i=>({index:i.index,expression:i.label,url:i.image,width:i.width,height:i.height,filename:i.filename})),error:batch.error,batch});
 const server=createServer(async(req,res)=>{
   const address=server.address(),origin='http://127.0.0.1:'+address.port;
@@ -42,7 +39,7 @@ const server=createServer(async(req,res)=>{
       res.end(await readFile(new URL('../index.html',import.meta.url),'utf8'));return;
     }
     if(route==='/client.mjs' && req.method==='GET') {res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store'});res.end(await readFile(new URL('../client.mjs',import.meta.url)));return;}
-    if(['/api/status','/v1/status'].includes(route) && req.method==='GET') return send({...generatorStatus(),name:'Aurora Codex Provider',api_version:'1',capabilities:{generation:true,edits:true,max_references:5,reference_roles:true,max_batch:30,serial:true,aspect_ratios:RATIOS,output_long_edges:RESOLUTIONS}});
+    if(['/api/status','/v1/status'].includes(route) && req.method==='GET') return send({...generatorStatus(),name:'Aurora Codex Provider',api_version:'1',capabilities:{generation:true,edits:true,max_prompt_chars:IMAGE_PROMPT_MAX_CHARS,max_references:5,reference_roles:true,max_batch:30,serial:true,aspect_ratios:RATIOS,output_long_edges:RESOLUTIONS}});
     if(route==='/api/presets' && req.method==='GET') return send({expressions:EXPRESSIONS,ratios:RATIOS,resolutions:RESOLUTIONS});
     if(route==='/v1/jobs' && req.method==='GET') return send({jobs:queue.list().map(publicJob)});
     if(route.startsWith('/api/jobs/') && req.method==='GET') {const batch=queue.get(route.slice(10));if(batch) {const item=batch.items[0];return send({job:{id:batch.id,state:batch.state,image:item.image,prompt:batch.prompt,error:batch.error}});}const job=await findJob(route.slice(10));return job?send({job}):send({error:'Solicitud no encontrada.'},404);}
@@ -69,7 +66,7 @@ const server=createServer(async(req,res)=>{
     if(!['/v1/images/generations','/v1/images/edits','/v1/batches','/api/generate'].includes(route)) return send({error:'Página no encontrada.'},404);
     if(req.method!=='POST') return send({error:'Método no permitido.'},405);
     if(!req.headers['content-type']?.toLowerCase().startsWith('application/json')) return send({error:'Envía la solicitud como JSON.'},415);
-    let input;try{input=JSON.parse((await body(req,16384)).toString('utf8'));}catch(error){if(error.status) throw error;return send({error:'JSON no válido.'},400);}
+    let input;try{input=JSON.parse((await body(req,IMAGE_JOB_JSON_MAX_BYTES)).toString('utf8'));}catch(error){if(error.status) throw error;return send({error:'JSON no válido.'},400);}
     if(!input || typeof input!=='object' || Array.isArray(input)) return send({error:'Solicitud no válida.'},400);
     if(route==='/v1/images/edits' && (!Array.isArray(input.references) || !input.references.length)) return send({error:'La edición necesita al menos una referencia subida.'},400);
     if(route==='/v1/images/generations' && input.references?.length) return send({error:'Usa /v1/images/edits para generar desde referencias.'},400);

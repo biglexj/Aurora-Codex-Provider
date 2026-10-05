@@ -32,3 +32,9 @@ Biglex solicita otra temática y acepta una imagen horizontal y otra vertical co
 Ambos trabajos completed, progreso 1/1 y error null. Ambas imágenes devueltas por la API con HTTP 200 y MIME image/png; dimensiones y firma PNG contrastadas con los bytes reales. La exportación normaliza el tamaño nativo con fit contain, sin recorte ni deformación. Revisión visual de los PNG exportados: paisaje horizontal y torre completa en vertical, sin texto ni marcos visibles. No se generaron imágenes de 3:4 o 4:3 en esta prueba.
 
 Imágenes conservadas en generated/{id}/01_imagen.png del servidor. Copias de evidencia en el chat: outputs/aurora-linux-horizontal-16x9.png y outputs/aurora-linux-vertical-9x16.png. Manifest de verificación con HTTP, tamaños y SHA-256: data/ratio-test-dad61a7e-f470-45bf-b503-1c1fd8bed41a.json (fuera de Git), copiado a outputs/aurora-linux-format-test.json del chat.
+
+## Límite de prompt de Aurora · 2026-10-05
+
+A solicitud de Biglex, cola, entrada nativa y API admiten 20 000 puntos de código Unicode; se rechaza 20 001 antes de generar. Cuerpo JSON de 128 KiB y capacidad max_prompt_chars publicada. No se recorta ni resume automáticamente. El contrato de la API GPT Image de 32 000 caracteres no prueba por sí solo el límite del imagegen integrado de Codex.
+
+npm test: 12 pruebas pasan, incluidas frontera, emojis, cuerpo JSON con escapes y persistencia íntegra de instrucciones antes del generador simulado. npm run check: correcto. Sin imagen real nueva ni reinicio/despliegue de servicios. API.md y README.md actualizados. Git diff --check correcto; push autorizado por el usuario, pendiente de verificación remota al escribir esta nota.

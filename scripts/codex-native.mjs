@@ -6,6 +6,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {resolveCodexBinary} from './codex-binary.mjs';
 import {referenceGuide} from './reference-roles.mjs';
+import {validatePrompt} from './prompt-limits.mjs';
 
 const jobsDirectory=process.env.LOCAL_IMAGE_DATA_DIR?path.resolve(process.env.LOCAL_IMAGE_DATA_DIR,'image-jobs'):fileURLToPath(new URL('../data/image-jobs/',import.meta.url));
 const imagesDirectory=process.env.LOCAL_IMAGE_OUTPUT_DIR?path.resolve(process.env.LOCAL_IMAGE_OUTPUT_DIR):fileURLToPath(new URL('../generated/',import.meta.url));
@@ -30,7 +31,7 @@ export async function findJob(id) {
 }
 export async function enqueue(prompt,requestId) {
   if (!connected) throw new Error('Codex necesita una sesión iniciada con ChatGPT en este equipo.');
-  if (typeof prompt!=='string' || !prompt.trim() || prompt.length>2000) throw new Error('Escribe un prompt de entre 1 y 2000 caracteres.');
+  validatePrompt(prompt);
   if (typeof requestId!=='string' || !/^[a-f0-9-]{36}$/.test(requestId)) throw new Error('La solicitud no tiene un identificador válido.');
   if (requests.has(requestId)) return publicJob(jobs.get(requests.get(requestId)));
   if (pending.length>=3) throw new Error('La cola está llena. Espera a que termine la imagen actual.');
