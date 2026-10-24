@@ -1,10 +1,13 @@
 # Aurora Codex Provider
 
+> [!NOTE]
+> **Herramienta utilitaria personal · Sin mantenimiento activo**  
+> Este repositorio es una utilidad complementaria sin mantenimiento activo ni desarrollo continuo. Se publica como referencia y herramienta para quien desee conectar su suscripción existente de ChatGPT (a través de Codex CLI) en este equipo o servidor, permitiendo generar imágenes dentro del ecosistema Aurora sin necesidad de claves de API externas ni cargos adicionales por token.
+
 Proveedor personal de imágenes para Aurora. Usa Codex CLI con la cuenta de ChatGPT iniciada en este equipo. No necesita la interfaz de Codex abierta ni una clave de la API de OpenAI.
 
 La solicitud admite hasta 20 000 caracteres Unicode sin recortar el prompt; el cuerpo JSON está acotado a 128 KiB. Es un límite de la integración de Aurora, independiente del contexto y las cuotas del generador. Véase [el contrato HTTP](API.md).
 
-El proyecto permanece privado. La integración como submódulo de Aurora y la preparación de una posible publicación open source están previstas en [ROADMAP.md](ROADMAP.md).
 
 ## Windows
 
@@ -71,3 +74,8 @@ curl http://127.0.0.1:54799/v1/status
 ```
 
 La activación de linger puede requerir permisos de administrador según el servidor. En el entorno de Biglex quedó `Linger=yes` y el proveedor respondió `ready=true`; una nueva solicitud del usuario completó y se entregó por el puente HTTPS de Aurora. No se reinició la máquina para probar este cambio.
+
+## Licencia
+
+Distribuido bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+
